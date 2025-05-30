@@ -1,0 +1,7 @@
+database:
+  username: witty
+  host: urban-opossum-11872.j77.aws-ap-south-1.cockroachlabs.cloud
+  database: defaultdb
+  port: 26257
+  sslmode: verify-full
+  max_retries: 60
