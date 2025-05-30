@@ -1,3 +1,5 @@
+server:
+  port: 3000
 database:
   username: witty
   host: urban-opossum-11872.j77.aws-ap-south-1.cockroachlabs.cloud

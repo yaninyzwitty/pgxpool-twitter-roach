@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -10,17 +11,25 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph"
+	"github.com/yaninyzwitty/pgxpool-twitter-roach/pkg"
 )
 
-const defaultPort = "8080"
-
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
+	var cfg pkg.Config
+	if err := cfg.LoadConfig("config.yaml"); err != nil {
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
 	}
+
+	app := fiber.New(fiber.Config{
+		Immutable: true,
+	})
+	app.Use(logger.New())
 
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
 
@@ -35,9 +44,22 @@ func main() {
 		Cache: lru.New[string](100),
 	})
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	app.Post("/query", FiberHandler(srv))
+	app.Get("/", FiberHandler(playground.Handler("GraphQL Playground", "/query")))
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	slog.Info("API Gateway running", "port", cfg.Server.Port)
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+
+	if err := app.Listen(addr); err != nil {
+		slog.Error("failed to start server", "error", err)
+		os.Exit(1)
+	}
+
+}
+
+func FiberHandler(h http.Handler) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		fasthttpadaptor.NewFastHTTPHandler(h)(c.Context())
+		return nil
+	}
 }
