@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -50,10 +54,33 @@ func main() {
 	slog.Info("API Gateway running", "port", cfg.Server.Port)
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 
-	if err := app.Listen(addr); err != nil {
-		slog.Error("failed to start server", "error", err)
+	// Create a channel to listen for interrupt signals
+	quit := make(chan os.Signal, 1)
+	// Register the channel to receive specific signals
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start server in a goroutine
+	go func() {
+		if err := app.Listen(addr); err != nil {
+			slog.Error("failed to start server", "error", err)
+			os.Exit(1)
+		}
+	}()
+	// Block until we receive a signal
+	<-quit
+	slog.Info("Shutting down server...")
+
+	// Create a context with timeout for graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := app.ShutdownWithContext(ctx); err != nil {
+		slog.Error("Server forced to shutdown", "error", err)
 		os.Exit(1)
 	}
+
+	slog.Info("Server exited gracefully")
 
 }
 
