@@ -9,11 +9,15 @@ import (
 )
 
 type Config struct {
-	Server   Server   `yaml:"server"`
-	Database Database `yaml:"database"`
+	Server     Server     `yaml:"server"`
+	GrpcServer GrpcServer `yaml:"grpc-server"`
+	Database   Database   `yaml:"database"`
 }
 
 type Server struct {
+	Port int `yaml:"port"`
+}
+type GrpcServer struct {
 	Port int `yaml:"port"`
 }
 
