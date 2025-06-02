@@ -48,6 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+	pool := db.Pool()
 	slog.Info("Connected to database successfully")
 
 	serverAddress := utils.BuildServerAddr(cfg.GrpcServer.Port)
@@ -59,7 +60,8 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	NewSocialServiceGrpcHandler(grpcServer)
+	repository := NewPostgresSocialServiceRepository(pool)
+	NewSocialServiceGrpcHandler(grpcServer, repository)
 
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
