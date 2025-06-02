@@ -3,8 +3,8 @@ syntax = "proto3";
 package user;
 
 option go_package = "shared/proto/user;user";
-import "google/protobuf/timestamp.proto";
 
+import "google/protobuf/timestamp.proto";
 
 message User {
     int64 id = 1;
@@ -20,24 +20,35 @@ message GetUserByIdRequest {
 message GetUserByIdResponse {
     User user = 1;
 }
+
 message GetUserByEmailRequest {
     string email = 1;
-} 
+}
+
 message GetUserByEmailResponse {
     User user = 1;
-
 }
 
 message GetUsersRequest {
     int32 limit = 1;
-    int32 offset = 2; 
+    int32 offset = 2;
 }
-message GetUsersResponse {
-    User user = 1;
 
+message GetUsersResponse {
+    repeated User users = 1; // FIXED
 }
+
+message StreamUsersRequest {
+    int32 limit = 1;
+}
+
+message StreamUsersResponse {
+    User user = 1;
+}
+
 service UserService {
     rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
     rpc GetUserByEmail(GetUserByEmailRequest) returns (GetUserByEmailResponse);
     rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+    rpc StreamUsers(StreamUsersRequest) returns (stream StreamUsersResponse); 
 }

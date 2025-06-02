@@ -7,25 +7,95 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph/model"
+	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// GetUserByID is the resolver for the getUserById field.
+func (r *queryResolver) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+	if id == "" {
+		return nil, fmt.Errorf("id cant be empty")
+	}
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.SocialServiceClient.GetUserById(ctx, &pb.GetUserByIdRequest{
+		Id: userId,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	userIdInString := strconv.FormatInt(result.User.Id, 10)
+	return &model.User{
+		ID:        userIdInString,
+		Username:  result.User.Username,
+		Email:     result.User.Username,
+		CreatedAt: result.User.CreatedAt.AsTime(),
+	}, nil
+
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// GetUserByEmail is the resolver for the getUserByEmail field.
+func (r *queryResolver) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	if email == "" {
+		return nil, fmt.Errorf("email cant be empty")
+	}
+
+	result, err := r.SocialServiceClient.GetUserByEmail(ctx, &pb.GetUserByEmailRequest{
+		Email: email,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	userIdInString := strconv.FormatInt(result.User.Id, 10)
+	return &model.User{
+		ID:        userIdInString,
+		Username:  result.User.Username,
+		Email:     result.User.Username,
+		CreatedAt: result.User.CreatedAt.AsTime(),
+	}, nil
+
 }
 
-// Mutation returns MutationResolver implementation.
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+// GetUsers is the resolver for the getUsers field.
+func (r *queryResolver) GetUsers(ctx context.Context, limit *int32, offset *int32) ([]*model.User, error) {
+	panic(fmt.Errorf("not implemented: GetUsers - getUsers"))
+}
+
+// StreamUsers is the resolver for the streamUsers field.
+func (r *subscriptionResolver) StreamUsers(ctx context.Context, limit *int32) (<-chan *model.User, error) {
+	panic(fmt.Errorf("not implemented: StreamUsers - streamUsers"))
+}
 
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
-type mutationResolver struct{ *Resolver }
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
+
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
+	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+}
+func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
+	panic(fmt.Errorf("not implemented: Todos - todos"))
+}
+func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
+type mutationResolver struct{ *Resolver }
+*/

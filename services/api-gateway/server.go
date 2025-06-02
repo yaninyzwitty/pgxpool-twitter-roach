@@ -21,6 +21,9 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph"
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/pkg"
+	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -34,8 +37,20 @@ func main() {
 		Immutable: true,
 	})
 	app.Use(logger.New())
+	grpcClientAddr := fmt.Sprintf(":%d", cfg.GrpcServer.Port)
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	gprcConn, err := grpc.NewClient(grpcClientAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("failed to connect to grpc server", "error", err)
+		os.Exit(1)
+	}
+	defer gprcConn.Close()
+
+	socialServiceClient := pb.NewUserServiceClient(gprcConn)
+
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		SocialServiceClient: socialServiceClient,
+	}}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
@@ -66,6 +81,7 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+
 	// Block until we receive a signal
 	<-quit
 	slog.Info("Shutting down server...")
