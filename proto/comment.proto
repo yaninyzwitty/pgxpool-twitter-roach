@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "shared/proto/comment;comment";
+
+import "google/protobuf/timestamp.proto";
+import "user.proto";
+
+message Comment {
+    int64 id = 1;
+    user.User user = 2;
+    int64 post_id = 3;
+    string body = 4;
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message GetCommentRequest {
+    int64 comment_id = 1;
+}
+
+message GetCommentResponse {
+    Comment comment = 1;
+}
+
+service CommentService {
+    rpc GetComment(GetCommentRequest) returns (GetCommentResponse);
+
+}

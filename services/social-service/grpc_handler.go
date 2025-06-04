@@ -11,6 +11,7 @@ import (
 
 type SocialServiceGrpcHandler struct {
 	pb.UnimplementedUserServiceServer
+
 	repository *PostgresSocialServiceRepository
 }
 

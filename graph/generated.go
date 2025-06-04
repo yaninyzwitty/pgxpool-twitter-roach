@@ -876,9 +876,6 @@ func (ec *executionContext) _Subscription_streamUsers(ctx context.Context, field
 		return nil
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return nil
 	}
 	return func(ctx context.Context) graphql.Marshaler {
@@ -891,7 +888,7 @@ func (ec *executionContext) _Subscription_streamUsers(ctx context.Context, field
 				w.Write([]byte{'{'})
 				graphql.MarshalString(field.Alias).MarshalGQL(w)
 				w.Write([]byte{':'})
-				ec.marshalNUser2ᚖgithubᚗcomᚋyaninyzwittyᚋpgxpoolᚑtwitterᚑroachᚋgraphᚋmodelᚐUser(ctx, field.Selections, res).MarshalGQL(w)
+				ec.marshalOUser2ᚖgithubᚗcomᚋyaninyzwittyᚋpgxpoolᚑtwitterᚑroachᚋgraphᚋmodelᚐUser(ctx, field.Selections, res).MarshalGQL(w)
 				w.Write([]byte{'}'})
 			})
 		case <-ctx.Done():
@@ -4033,6 +4030,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋyaninyzwittyᚋpgxpoolᚑtwitterᚑroachᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

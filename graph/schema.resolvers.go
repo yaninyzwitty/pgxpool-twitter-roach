@@ -6,11 +6,16 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"log/slog"
 	"strconv"
 
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph/model"
 	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // GetUserByID is the resolver for the getUserById field.
@@ -38,7 +43,6 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id string) (*model.User
 		Email:     result.User.Username,
 		CreatedAt: result.User.CreatedAt.AsTime(),
 	}, nil
-
 }
 
 // GetUserByEmail is the resolver for the getUserByEmail field.
@@ -61,17 +65,102 @@ func (r *queryResolver) GetUserByEmail(ctx context.Context, email string) (*mode
 		Email:     result.User.Username,
 		CreatedAt: result.User.CreatedAt.AsTime(),
 	}, nil
-
 }
 
 // GetUsers is the resolver for the getUsers field.
 func (r *queryResolver) GetUsers(ctx context.Context, limit *int32, offset *int32) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented: GetUsers - getUsers"))
+	// set default  limits
+	l := int32(10)
+	o := int32(0)
+
+	if limit != nil {
+		l = *limit
+	}
+	if offset != nil {
+		o = *offset
+	}
+
+	response, err := r.SocialServiceClient.GetUsers(ctx, &pb.GetUsersRequest{
+		Limit:  l,
+		Offset: o,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %w", err)
+	}
+
+	var users []*model.User
+	for _, u := range response.Users {
+		userIdInString := strconv.FormatInt(u.Id, 10)
+		users = append(users, &model.User{
+			ID:        userIdInString,
+			Username:  u.Username,
+			Email:     u.Email,
+			CreatedAt: u.CreatedAt.AsTime(),
+		})
+	}
+
+	return users, nil
 }
 
 // StreamUsers is the resolver for the streamUsers field.
 func (r *subscriptionResolver) StreamUsers(ctx context.Context, limit *int32) (<-chan *model.User, error) {
-	panic(fmt.Errorf("not implemented: StreamUsers - streamUsers"))
+	l := int32(10)
+	if limit != nil {
+		l = *limit
+	}
+
+	userChan := make(chan *model.User)
+
+	stream, err := r.SocialServiceClient.StreamUsers(ctx, &pb.StreamUsersRequest{
+		Limit: l,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to start user stream: %w", err)
+	}
+
+	go func() {
+		defer close(userChan)
+		defer slog.Info("Closing user stream")
+
+		for {
+			select {
+			case <-ctx.Done():
+				slog.Info("Context cancelled", "reason", ctx.Err())
+				return
+			default:
+			}
+
+			userResponse, err := stream.Recv()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					slog.Info("Stream ended normally")
+					return
+				}
+				if status.Code(err) == codes.Canceled {
+					slog.Info("Stream cancelled")
+					return
+				}
+				slog.Error("stream error", "error", err)
+				return
+			}
+
+			slog.Info("Received user", "id", userResponse.User.Id)
+
+			select {
+			case <-ctx.Done():
+				return
+			case userChan <- &model.User{
+				ID:        strconv.FormatInt(userResponse.User.Id, 10),
+				Username:  userResponse.User.Username,
+				Email:     userResponse.User.Email,
+				CreatedAt: userResponse.User.CreatedAt.AsTime(),
+			}:
+				slog.Info("Sent user to channel", "id", userResponse.User.Id)
+			}
+		}
+	}()
+	return userChan, nil
 }
 
 // Query returns QueryResolver implementation.
@@ -82,20 +171,3 @@ func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionRes
 
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
-}
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
-}
-func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
-type mutationResolver struct{ *Resolver }
-*/
