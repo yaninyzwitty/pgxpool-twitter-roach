@@ -64,8 +64,8 @@ func main() {
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(),
 	)
-	repository := NewPostgresSocialServiceRepository(pool)
-	NewSocialServiceGrpcHandler(grpcServer, repository)
+	repository := NewPostgresCommentServiceRepository(pool)
+	NewCommentServiceGrpcHandler(grpcServer, repository)
 
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
