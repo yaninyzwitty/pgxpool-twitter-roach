@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CommentService_GetComment_FullMethodName = "/user.CommentService/GetComment"
+	CommentService_GetComment_FullMethodName = "/comment.CommentService/GetComment"
 )
 
 // CommentServiceClient is the client API for CommentService service.
@@ -108,7 +108,7 @@ func _CommentService_GetComment_Handler(srv interface{}, ctx context.Context, de
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var CommentService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "user.CommentService",
+	ServiceName: "comment.CommentService",
 	HandlerType: (*CommentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

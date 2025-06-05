@@ -27,7 +27,7 @@ type User struct {
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -83,9 +83,9 @@ func (x *User) GetEmail() string {
 	return ""
 }
 
-func (x *User) GetCreatedAt() *timestamppb.Timestamp {
+func (x *User) GetUpdatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.UpdatedAt
 	}
 	return nil
 }
@@ -461,7 +461,7 @@ const file_user_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x129\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"$\n" +
+	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"$\n" +
 	"\x12GetUserByIdRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\"5\n" +
 	"\x13GetUserByIdResponse\x12\x1e\n" +
@@ -515,7 +515,7 @@ var file_user_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),  // 9: google.protobuf.Timestamp
 }
 var file_user_proto_depIdxs = []int32{
-	9, // 0: user.User.created_at:type_name -> google.protobuf.Timestamp
+	9, // 0: user.User.updated_at:type_name -> google.protobuf.Timestamp
 	0, // 1: user.GetUserByIdResponse.user:type_name -> user.User
 	0, // 2: user.GetUserByEmailResponse.user:type_name -> user.User
 	0, // 3: user.GetUsersResponse.users:type_name -> user.User
