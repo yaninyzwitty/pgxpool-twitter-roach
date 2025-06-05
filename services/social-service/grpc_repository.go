@@ -22,12 +22,12 @@ func (r *PostgresSocialServiceRepository) GetUserById(ctx context.Context, userI
 	row := r.DB.QueryRow(ctx, query, userId)
 
 	var u pb.User
-	var createdAt time.Time
-	if err := row.Scan(&u.Id, &u.Email, &u.Username, &createdAt); err != nil {
+	var updatedAt time.Time
+	if err := row.Scan(&u.Id, &u.Email, &u.Username, &updatedAt); err != nil {
 		return nil, err
 	}
 
-	u.CreatedAt = timestamppb.New(createdAt)
+	u.UpdatedAt = timestamppb.New(updatedAt)
 	return &u, nil
 }
 func (r *PostgresSocialServiceRepository) GetUserByEmail(ctx context.Context, email string) (*pb.User, error) {
@@ -35,12 +35,12 @@ func (r *PostgresSocialServiceRepository) GetUserByEmail(ctx context.Context, em
 	row := r.DB.QueryRow(ctx, query, email)
 
 	var u pb.User
-	var createdAt time.Time
-	if err := row.Scan(&u.Id, &u.Email, &u.Username, &createdAt); err != nil {
+	var updatedAt time.Time
+	if err := row.Scan(&u.Id, &u.Email, &u.Username, &updatedAt); err != nil {
 		return nil, err
 	}
 
-	u.CreatedAt = timestamppb.New(createdAt)
+	u.UpdatedAt = timestamppb.New(updatedAt)
 	return &u, nil
 }
 func (r *PostgresSocialServiceRepository) GetUsers(ctx context.Context, limit, offset int) ([]*pb.User, error) {
@@ -54,11 +54,11 @@ func (r *PostgresSocialServiceRepository) GetUsers(ctx context.Context, limit, o
 	var users []*pb.User
 	for rows.Next() {
 		var user pb.User
-		var createdAt time.Time
-		if err := rows.Scan(&user.Id, &user.Email, &user.Username, &createdAt); err != nil {
+		var updatedAt time.Time
+		if err := rows.Scan(&user.Id, &user.Email, &user.Username, &updatedAt); err != nil {
 			return nil, err
 		}
-		user.CreatedAt = timestamppb.New(createdAt)
+		user.UpdatedAt = timestamppb.New(updatedAt)
 		users = append(users, &user)
 	}
 

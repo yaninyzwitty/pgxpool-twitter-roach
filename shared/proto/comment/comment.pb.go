@@ -11,7 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	user "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user" // Replace with the correct import path
+	user "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
 	sync "sync"
 	unsafe "unsafe"
 )
@@ -27,10 +27,9 @@ type Comment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	User          *user.User             `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
-	PostId        int64                  `protobuf:"varint,3,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"` // fixed field number
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -77,13 +76,6 @@ func (x *Comment) GetUser() *user.User {
 		return x.User
 	}
 	return nil
-}
-
-func (x *Comment) GetPostId() int64 {
-	if x != nil {
-		return x.PostId
-	}
-	return 0
 }
 
 func (x *Comment) GetBody() string {
@@ -199,26 +191,25 @@ var File_comment_proto protoreflect.FileDescriptor
 
 const file_comment_proto_rawDesc = "" +
 	"\n" +
-	"\rcomment.proto\x12\x04user\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\n" +
-	"user.proto\"\xdc\x01\n" +
+	"\rcomment.proto\x12\acomment\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\n" +
+	"user.proto\"\xc3\x01\n" +
 	"\aComment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1e\n" +
 	"\x04user\x18\x02 \x01(\v2\n" +
-	".user.UserR\x04user\x12\x17\n" +
-	"\apost_id\x18\x03 \x01(\x03R\x06postId\x12\x12\n" +
-	"\x04body\x18\x04 \x01(\tR\x04body\x129\n" +
+	".user.UserR\x04user\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"2\n" +
+	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"2\n" +
 	"\x11GetCommentRequest\x12\x1d\n" +
 	"\n" +
-	"comment_id\x18\x01 \x01(\x03R\tcommentId\"=\n" +
-	"\x12GetCommentResponse\x12'\n" +
-	"\acomment\x18\x01 \x01(\v2\r.user.CommentR\acomment2Q\n" +
-	"\x0eCommentService\x12?\n" +
+	"comment_id\x18\x01 \x01(\x03R\tcommentId\"@\n" +
+	"\x12GetCommentResponse\x12*\n" +
+	"\acomment\x18\x01 \x01(\v2\x10.comment.CommentR\acomment2W\n" +
+	"\x0eCommentService\x12E\n" +
 	"\n" +
-	"GetComment\x12\x17.user.GetCommentRequest\x1a\x18.user.GetCommentResponseB\x1eZ\x1cshared/proto/comment;commentb\x06proto3"
+	"GetComment\x12\x1a.comment.GetCommentRequest\x1a\x1b.comment.GetCommentResponseB\x1eZ\x1cshared/proto/comment;commentb\x06proto3"
 
 var (
 	file_comment_proto_rawDescOnce sync.Once
@@ -234,19 +225,19 @@ func file_comment_proto_rawDescGZIP() []byte {
 
 var file_comment_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_comment_proto_goTypes = []any{
-	(*Comment)(nil),               // 0: user.Comment
-	(*GetCommentRequest)(nil),     // 1: user.GetCommentRequest
-	(*GetCommentResponse)(nil),    // 2: user.GetCommentResponse
+	(*Comment)(nil),               // 0: comment.Comment
+	(*GetCommentRequest)(nil),     // 1: comment.GetCommentRequest
+	(*GetCommentResponse)(nil),    // 2: comment.GetCommentResponse
 	(*user.User)(nil),             // 3: user.User
 	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_comment_proto_depIdxs = []int32{
-	3, // 0: user.Comment.user:type_name -> user.User
-	4, // 1: user.Comment.created_at:type_name -> google.protobuf.Timestamp
-	4, // 2: user.Comment.updated_at:type_name -> google.protobuf.Timestamp
-	0, // 3: user.GetCommentResponse.comment:type_name -> user.Comment
-	1, // 4: user.CommentService.GetComment:input_type -> user.GetCommentRequest
-	2, // 5: user.CommentService.GetComment:output_type -> user.GetCommentResponse
+	3, // 0: comment.Comment.user:type_name -> user.User
+	4, // 1: comment.Comment.created_at:type_name -> google.protobuf.Timestamp
+	4, // 2: comment.Comment.updated_at:type_name -> google.protobuf.Timestamp
+	0, // 3: comment.GetCommentResponse.comment:type_name -> comment.Comment
+	1, // 4: comment.CommentService.GetComment:input_type -> comment.GetCommentRequest
+	2, // 5: comment.CommentService.GetComment:output_type -> comment.GetCommentResponse
 	5, // [5:6] is the sub-list for method output_type
 	4, // [4:5] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name

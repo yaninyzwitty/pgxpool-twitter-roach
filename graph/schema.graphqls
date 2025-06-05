@@ -7,10 +7,20 @@ type User {
 
 scalar Time
 
+type Comment {
+  id: ID!
+  user: User!
+  postId: ID!
+  body: String!
+  createdAt: Time!
+  updatedAt: Time
+}
+
 type Query {
   getUserById(id: ID!): User!
   getUserByEmail(email: String!): User!
   getUsers(limit: Int = 10, offset: Int = 0): [User!]!
+  getComment(commentID: ID!): Comment!
 }
 
 type Subscription {

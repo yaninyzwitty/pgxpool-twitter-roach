@@ -20,6 +20,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph"
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/pkg"
+	commentpb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/comment"
 	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -43,11 +44,13 @@ func main() {
 
 	// gRPC user service client
 	socialServiceClient := pb.NewUserServiceClient(grpcConn)
+	commentServiceClient := commentpb.NewCommentServiceClient(grpcConn)
 
 	// GraphQL server setup
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
-			SocialServiceClient: socialServiceClient,
+			SocialServiceClient:  socialServiceClient,
+			CommentServiceClient: commentServiceClient,
 		},
 	}))
 

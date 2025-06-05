@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package post;
+
+option go_package = "shared/proto/post;post";
+
+import "google/protobuf/timestamp.proto";
+import "user.proto";
+import "comment.proto";
+
+message Post {
+    int64 id = 1;
+    user.User user = 2;
+    string body = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
+
+message GetPostRequest {
+    int64 post_id = 1;
+}
+
+message GetPostResponse {
+    Post post = 1;
+    repeated comment.Comment comments = 2;
+}
+
+service PostService {
+    rpc GetPost(GetPostRequest) returns (GetPostResponse);
+}
