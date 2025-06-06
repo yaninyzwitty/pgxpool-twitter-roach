@@ -32,7 +32,6 @@ func (r *commentResolver) User(ctx context.Context, obj *model.Comment) (*model.
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
-
 	}
 
 	return &model.User{
@@ -41,28 +40,32 @@ func (r *commentResolver) User(ctx context.Context, obj *model.Comment) (*model.
 		Email:     user.User.Email,
 		CreatedAt: user.User.UpdatedAt.AsTime(),
 	}, nil
-
 }
 
 // User is the resolver for the user field.
 func (r *postResolver) User(ctx context.Context, obj *model.Post) (*model.User, error) {
-
 	if obj == nil || obj.User.ID == "" {
 		return nil, fmt.Errorf("user cant be nil")
 	}
 
-	// userId, err := strconv.ParseInt(obj.User.ID, 10, 64)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// user, err := r.SocialServiceClient.GetUserById(ctx, &pb.GetUserByIdRequest{
-	// 	Id: userId,
-	// })
-	// if err != nil {
-	// 	return nil, fmt.Errorf("")
-	// }
-	return r.Query().GetUserByID(ctx, obj.User.ID)
+	userId, err := strconv.ParseInt(obj.User.ID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
 
+	user, err := r.SocialServiceClient.GetUserById(ctx, &pb.GetUserByIdRequest{
+		Id: userId,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+	}
+
+	return &model.User{
+		ID:        strconv.FormatInt(user.User.Id, 10),
+		Username:  user.User.Username,
+		Email:     user.User.Email,
+		CreatedAt: user.User.UpdatedAt.AsTime(),
+	}, nil
 }
 
 // GetUserByID is the resolver for the getUserById field.
@@ -87,7 +90,7 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id string) (*model.User
 	return &model.User{
 		ID:        userIdInString,
 		Username:  result.User.Username,
-		Email:     result.User.Username,
+		Email:     result.User.Email,
 		CreatedAt: result.User.UpdatedAt.AsTime(),
 	}, nil
 }
