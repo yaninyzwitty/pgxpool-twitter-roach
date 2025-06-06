@@ -12,8 +12,58 @@ import (
 	"time"
 
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph/model"
+	commentpb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/comment"
+	postpb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/post"
 	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
 )
+
+// User is the resolver for the user field.
+func (r *commentResolver) User(ctx context.Context, obj *model.Comment) (*model.User, error) {
+	if obj == nil || obj.User.ID == "" {
+		return nil, fmt.Errorf("comment cant be empty")
+	}
+	userId, err := strconv.ParseInt(obj.User.ID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := r.SocialServiceClient.GetUserById(ctx, &pb.GetUserByIdRequest{
+		Id: userId,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+
+	}
+
+	return &model.User{
+		ID:        strconv.FormatInt(user.User.Id, 10),
+		Username:  user.User.Username,
+		Email:     user.User.Email,
+		CreatedAt: user.User.UpdatedAt.AsTime(),
+	}, nil
+
+}
+
+// User is the resolver for the user field.
+func (r *postResolver) User(ctx context.Context, obj *model.Post) (*model.User, error) {
+
+	if obj == nil || obj.User.ID == "" {
+		return nil, fmt.Errorf("user cant be nil")
+	}
+
+	// userId, err := strconv.ParseInt(obj.User.ID, 10, 64)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// user, err := r.SocialServiceClient.GetUserById(ctx, &pb.GetUserByIdRequest{
+	// 	Id: userId,
+	// })
+	// if err != nil {
+	// 	return nil, fmt.Errorf("")
+	// }
+	return r.Query().GetUserByID(ctx, obj.User.ID)
+
+}
 
 // GetUserByID is the resolver for the getUserById field.
 func (r *queryResolver) GetUserByID(ctx context.Context, id string) (*model.User, error) {
@@ -100,6 +150,82 @@ func (r *queryResolver) GetUsers(ctx context.Context, limit *int32, offset *int3
 	return users, nil
 }
 
+// GetComment is the resolver for the getComment field.
+func (r *queryResolver) GetComment(ctx context.Context, commentID string) (*model.Comment, error) {
+	if commentID == "" {
+		return nil, fmt.Errorf("commentID cant be empty")
+	}
+
+	commentId, err := strconv.ParseInt(commentID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := r.CommentServiceClient.GetComment(ctx, &commentpb.GetCommentRequest{
+		CommentId: commentId,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get comment: %w", err)
+	}
+
+	updatedAt := response.Comment.UpdatedAt.AsTime()
+	return &model.Comment{
+		ID: strconv.FormatInt(response.Comment.Id, 10),
+		User: &model.User{
+			ID:        strconv.FormatInt(response.Comment.User.Id, 10),
+			Username:  response.Comment.User.Username,
+			Email:     response.Comment.User.Email,
+			CreatedAt: response.Comment.User.UpdatedAt.AsTime(),
+		},
+		Body:      response.Comment.Body,
+		CreatedAt: response.Comment.CreatedAt.AsTime(),
+		PostID:    "",
+		UpdatedAt: &updatedAt,
+	}, nil
+}
+
+// GetPost is the resolver for the getPost field.
+func (r *queryResolver) GetPost(ctx context.Context, postID string) (*model.Post, error) {
+	if postID == "" {
+		return nil, fmt.Errorf("postID cant be empty")
+	}
+
+	postId, err := strconv.ParseInt(postID, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := r.PostServiceClient.GetPost(ctx, &postpb.GetPostRequest{
+		PostId: postId,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get post: %w", err)
+	}
+
+	updatedAt := response.Post.UpdatedAt.AsTime()
+
+	return &model.Post{
+		ID: strconv.FormatInt(response.Post.Id, 10),
+		User: &model.User{
+			ID:        strconv.FormatInt(response.Post.User.Id, 10),
+			Username:  response.Post.User.Username,
+			Email:     response.Post.User.Email,
+			CreatedAt: response.Post.User.UpdatedAt.AsTime(),
+		},
+		Body:      response.Post.Body,
+		CreatedAt: response.Post.CreatedAt.AsTime(),
+		UpdatedAt: &updatedAt,
+		Comments:  nil,
+	}, nil
+}
+
+// GetPosts is the resolver for the getPosts field.
+func (r *queryResolver) GetPosts(ctx context.Context, limit *int32, offset *int32) ([]*model.Post, error) {
+	return nil, nil
+}
+
 // StreamUsers is the resolver for the streamUsers field.
 func (r *subscriptionResolver) StreamUsers(ctx context.Context, limit *int32) (<-chan *model.User, error) {
 	l := int32(10)
@@ -153,11 +279,19 @@ func (r *subscriptionResolver) StreamUsers(ctx context.Context, limit *int32) (<
 	return userChan, nil
 }
 
+// Comment returns CommentResolver implementation.
+func (r *Resolver) Comment() CommentResolver { return &commentResolver{r} }
+
+// Post returns PostResolver implementation.
+func (r *Resolver) Post() PostResolver { return &postResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 // Subscription returns SubscriptionResolver implementation.
 func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
 
+type commentResolver struct{ *Resolver }
+type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }

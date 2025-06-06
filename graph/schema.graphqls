@@ -16,11 +16,22 @@ type Comment {
   updatedAt: Time
 }
 
+type Post {
+  id: ID!
+  user: User!
+  body: String!
+  createdAt: Time!
+  updatedAt: Time
+  comments: [Comment!]
+}
+
 type Query {
   getUserById(id: ID!): User!
   getUserByEmail(email: String!): User!
   getUsers(limit: Int = 10, offset: Int = 0): [User!]!
   getComment(commentID: ID!): Comment!
+  getPost(postID: ID!): Post!
+  getPosts(limit: Int = 10, offset: Int = 0): [Post!]!
 }
 
 type Subscription {

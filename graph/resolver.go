@@ -2,6 +2,7 @@ package graph
 
 import (
 	commentpb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/comment"
+	postpb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/post"
 	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
 )
 
@@ -12,4 +13,5 @@ import (
 type Resolver struct {
 	SocialServiceClient  pb.UserServiceClient
 	CommentServiceClient commentpb.CommentServiceClient
+	PostServiceClient    postpb.PostServiceClient
 }
