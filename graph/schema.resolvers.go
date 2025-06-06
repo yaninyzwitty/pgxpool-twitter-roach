@@ -6,16 +6,13 @@ package graph
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/yaninyzwitty/pgxpool-twitter-roach/graph/model"
 	pb "github.com/yaninyzwitty/pgxpool-twitter-roach/shared/proto/user"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // GetUserByID is the resolver for the getUserById field.
@@ -41,7 +38,7 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id string) (*model.User
 		ID:        userIdInString,
 		Username:  result.User.Username,
 		Email:     result.User.Username,
-		CreatedAt: result.User.CreatedAt.AsTime(),
+		CreatedAt: result.User.UpdatedAt.AsTime(),
 	}, nil
 }
 
@@ -62,8 +59,8 @@ func (r *queryResolver) GetUserByEmail(ctx context.Context, email string) (*mode
 	return &model.User{
 		ID:        userIdInString,
 		Username:  result.User.Username,
-		Email:     result.User.Username,
-		CreatedAt: result.User.CreatedAt.AsTime(),
+		Email:     result.User.Email,
+		CreatedAt: result.User.UpdatedAt.AsTime(),
 	}, nil
 }
 
@@ -96,7 +93,7 @@ func (r *queryResolver) GetUsers(ctx context.Context, limit *int32, offset *int3
 			ID:        userIdInString,
 			Username:  u.Username,
 			Email:     u.Email,
-			CreatedAt: u.CreatedAt.AsTime(),
+			CreatedAt: u.UpdatedAt.AsTime(),
 		})
 	}
 
@@ -112,54 +109,47 @@ func (r *subscriptionResolver) StreamUsers(ctx context.Context, limit *int32) (<
 
 	userChan := make(chan *model.User)
 
-	stream, err := r.SocialServiceClient.StreamUsers(ctx, &pb.StreamUsersRequest{
-		Limit: l,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to start user stream: %w", err)
-	}
-
 	go func() {
 		defer close(userChan)
 		defer slog.Info("Closing user stream")
+
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
 				slog.Info("Context cancelled", "reason", ctx.Err())
 				return
-			default:
-			}
-
-			userResponse, err := stream.Recv()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					slog.Info("Stream ended normally")
+			case <-ticker.C:
+				// Get users in batches
+				response, err := r.SocialServiceClient.GetUsers(ctx, &pb.GetUsersRequest{
+					Limit:  l,
+					Offset: 0, // You might want to implement pagination logic here
+				})
+				if err != nil {
+					slog.Error("failed to get users", "error", err)
 					return
 				}
-				if status.Code(err) == codes.Canceled {
-					slog.Info("Stream cancelled")
-					return
+
+				// Send each user to the channel
+				for _, u := range response.Users {
+					select {
+					case <-ctx.Done():
+						return
+					case userChan <- &model.User{
+						ID:        strconv.FormatInt(u.Id, 10),
+						Username:  u.Username,
+						Email:     u.Email,
+						CreatedAt: u.UpdatedAt.AsTime(),
+					}:
+						slog.Info("Sent user to channel", "id", u.Id)
+					}
 				}
-				slog.Error("stream error", "error", err)
-				return
-			}
-
-			slog.Info("Received user", "id", userResponse.User.Id)
-
-			select {
-			case <-ctx.Done():
-				return
-			case userChan <- &model.User{
-				ID:        strconv.FormatInt(userResponse.User.Id, 10),
-				Username:  userResponse.User.Username,
-				Email:     userResponse.User.Email,
-				CreatedAt: userResponse.User.CreatedAt.AsTime(),
-			}:
-				slog.Info("Sent user to channel", "id", userResponse.User.Id)
 			}
 		}
 	}()
+
 	return userChan, nil
 }
 
