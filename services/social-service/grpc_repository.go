@@ -44,7 +44,7 @@ func (r *PostgresSocialServiceRepository) GetUserByEmail(ctx context.Context, em
 	return &u, nil
 }
 func (r *PostgresSocialServiceRepository) GetUsers(ctx context.Context, limit, offset int) ([]*pb.User, error) {
-	query := `SELECT id, email, username, created_at FROM users ORDER BY id LIMIT $1 OFFSET $2`
+	query := `SELECT id, email, username, updated_at FROM users ORDER BY id LIMIT $1 OFFSET $2`
 	rows, err := r.DB.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
